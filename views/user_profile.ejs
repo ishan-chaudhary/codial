@@ -1,7 +1,15 @@
-        <link rel="stylesheet" href="/css/user_profile.css">
-        <h1>
-            Codeial / Profile Page
-        </h1>
+<link rel="stylesheet" href="/css/user_profile.css">
+<h1>
+    Codeial / Profile Page
+</h1>
 
-        <p><%= user.name %></p>
-        <p><%= user.email %></p>
+<% if(profile_user.id==locals.user.id) {%>
+<form action="/users/profile/update/<%= profile_user.id %>" method="POST">
+    <input name="name" type="text" value="<%= profile_user.name %>">
+    <input name="email" type="text" value="<%= profile_user.email %>">
+    <button>update</button>
+</form>
+<% }else { %>
+<p><%= profile_user.name %></p>
+<p><%= profile_user.email %></p>
+<% } %>
