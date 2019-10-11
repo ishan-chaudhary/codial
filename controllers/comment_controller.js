@@ -1,45 +1,53 @@
-const Comment=require('../models/comment');
-const post=require('../models/post');
+const Comment = require('../models/comment');
+const Post = require('../models/post');
+const commentsMailer = require('../mailer/comments_mailer');
 
-module.exports.create=function(req,res){
-  post.findById(req.body.post,function(err,post){
-    if(post){
-      Comment.create({
-        content:req.body.content,
-        user : req.user._id,
-        post :req.body.post
-      },function(err,comment){
-        post.comments.push(comment);
-        post.save();
-        res.redirect('/');
-      })
+module.exports.create = async function (req, res) {
+  try {
+    let post = await Post.findById(req.body.post)
+    if (post) {
+      let comment = await Comment.create({
+        content: req.body.content,
+        user: req.user._id,
+        post: req.body.post
+      });
+      post.comments.push(comment);
+      post.save();
+
+      comment = await comment.populate('user', 'name').execPopulate();
+      commentsMailer.newComment(comment);
+
+      res.redirect('/');
     }
-  })
+  } catch (err) {
+    console.log(err);
+  }
+
 };
 
-module.exports.destroy=async function(req,res){
-  try{
+module.exports.destroy = async function (req, res) {
+  try {
 
-    let comment=await Comment.findById(req.params.id);
+    let comment = await Comment.findById(req.params.id);
 
-  if(comment.user==req.user.id){
+    if (comment.user == req.user.id) {
 
-    let postId=comment.post;
+      let postId = comment.post;
 
-    comment.remove();
+      comment.remove();
 
-    await post.findByIdAndUpdate(postId,{
-      $pull :{comments: req.params.id}
-    })
+      await Post.findByIdAndUpdate(postId, {
+        $pull: { comments: req.params.id }
+      })
 
-  }
+    }
     return res.redirect('back');
-  
-  }catch(err){
+
+  } catch (err) {
     console.log(err);
     return;
   }
 
-  
+
 
 }
