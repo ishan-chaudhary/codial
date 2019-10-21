@@ -1,19 +1,49 @@
 const User = require('../models/user');
-
+const fs = require('fs');
+const path = require('path');
 
 module.exports.profile =async function(req, res){
-
-    let user= await User.findById(req.params.id);
-    return res.render('user_profile', {
-        title: 'User Profile',
-        profile_user: user
-    })
+ 
+    try{
+        let user= await User.findById(req.params.id);
+        return res.render('user_profile', {
+            title: 'User Profile',
+            profile_user: user
+        })
+    }catch(err){
+        console.log(err);
+        return res.redirect('back');
+    }
+   
 }
 
 module.exports.update=async function(req,res){
 
-  let user=await User.findByIdAndUpdate(req.params.id,req.body);
-  return res.redirect('/');
+ try{
+    let user=await User.findById(req.params.id);
+    User.uploadedAvatar(req,res,function(err){
+        if(err){
+            console.log("multer error");
+        }
+        
+        user.name=req.body.name;
+        user.email=req.body.email;
+
+        if(req.file){
+            if(user.avatar){
+                fs.unlinkSync(path.join(__dirname,'..',user.avatar));
+            }
+            user.avatar=User.avatarPath+'/'+req.file.filename;
+        }
+        user.save();
+       return res.redirect('/');
+    })
+
+     
+ }catch(err){
+    console.log(err);
+ }
+  
 }
 
 
